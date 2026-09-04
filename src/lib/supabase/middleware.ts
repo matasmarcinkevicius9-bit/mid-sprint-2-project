@@ -51,15 +51,26 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/signin'
     url.searchParams.set('redirectedFrom', pathname)
-    return NextResponse.redirect(url)
+    return redirectKeepingCookies(url, supabaseResponse)
   }
 
   if (user && AUTH_ROUTES.includes(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/notes'
     url.search = ''
-    return NextResponse.redirect(url)
+    return redirectKeepingCookies(url, supabaseResponse)
   }
 
   return supabaseResponse
+}
+
+/**
+ * Redirects while preserving any auth cookies Supabase refreshed during
+ * getUser(). A bare NextResponse.redirect() would discard them, dropping
+ * a rotated refresh token and signing the user out unexpectedly.
+ */
+function redirectKeepingCookies(url: URL, from: NextResponse) {
+  const response = NextResponse.redirect(url)
+  from.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+  return response
 }

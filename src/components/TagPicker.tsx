@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import type { Note, Tag } from '../types'
 import { getOrCreateTag } from '../hooks/useTags'

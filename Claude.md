@@ -1,1 +1,0 @@
-Every signed-in-only page must verify the user's session with the Supabase Auth server before it loads, and redirect to the sign-in page if the user is not signed in. Do not rely on the browser-side session alone.

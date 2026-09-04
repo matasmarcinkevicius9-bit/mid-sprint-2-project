@@ -1,6 +1,10 @@
+'use client'
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabaseClient'
+import { createClient } from '@/lib/supabase/client'
 import type { Collection } from '../types'
+
+const supabase = createClient()
 
 const COLLECTIONS_KEY = ['collections']
 

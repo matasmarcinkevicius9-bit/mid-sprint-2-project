@@ -1,3 +1,5 @@
+'use client'
+
 import type { Note } from '../types'
 
 interface NoteListProps {

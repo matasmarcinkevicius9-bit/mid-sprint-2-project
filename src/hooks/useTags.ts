@@ -1,6 +1,10 @@
+'use client'
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabaseClient'
+import { createClient } from '@/lib/supabase/client'
 import type { Tag } from '../types'
+
+const supabase = createClient()
 
 const TAGS_KEY = ['tags']
 

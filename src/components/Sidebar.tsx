@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Collection, Tag } from '../types'
@@ -7,7 +9,7 @@ import {
   useRenameCollection,
 } from '../hooks/useCollections'
 import { useDeleteTag } from '../hooks/useTags'
-import { supabase } from '../lib/supabaseClient'
+import { signOut } from '../app/actions/auth'
 
 interface SidebarProps {
   collections: Collection[]
@@ -17,8 +19,6 @@ interface SidebarProps {
   onSelectCollection: (id: string | null) => void
   onSelectTag: (id: string | null) => void
   userEmail: string | null
-  view: 'mine' | 'shared'
-  onSelectView: (view: 'mine' | 'shared') => void
 }
 
 export function Sidebar({
@@ -29,8 +29,6 @@ export function Sidebar({
   onSelectCollection,
   onSelectTag,
   userEmail,
-  view,
-  onSelectView,
 }: SidebarProps) {
   const queryClient = useQueryClient()
   const [newCollectionName, setNewCollectionName] = useState('')
@@ -74,8 +72,8 @@ export function Sidebar({
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
     queryClient.clear()
+    await signOut()
   }
 
   return (
@@ -100,28 +98,16 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto p-3">
         <button
           onClick={() => {
-            onSelectView('mine')
             onSelectCollection(null)
             onSelectTag(null)
           }}
-          className={`mb-1 w-full rounded-md px-3 py-1.5 text-left text-sm font-medium ${
-            view === 'mine' && selectedCollectionId === null
+          className={`mb-3 w-full rounded-md px-3 py-1.5 text-left text-sm font-medium ${
+            selectedCollectionId === null
               ? 'bg-neutral-900 text-white'
               : 'text-neutral-700 hover:bg-neutral-200'
           }`}
         >
           All Notes
-        </button>
-
-        <button
-          onClick={() => onSelectView('shared')}
-          className={`mb-3 w-full rounded-md px-3 py-1.5 text-left text-sm font-medium ${
-            view === 'shared'
-              ? 'bg-neutral-900 text-white'
-              : 'text-neutral-700 hover:bg-neutral-200'
-          }`}
-        >
-          Shared with me
         </button>
 
         <div className="mb-2 flex items-center justify-between px-1">
@@ -146,10 +132,7 @@ export function Sidebar({
                 />
               ) : (
                 <button
-                  onClick={() => {
-                    onSelectView('mine')
-                    onSelectCollection(c.id)
-                  }}
+                  onClick={() => onSelectCollection(c.id)}
                   onDoubleClick={() => startRename(c)}
                   className={`flex-1 truncate rounded-md px-2 py-1 text-left text-sm ${
                     selectedCollectionId === c.id
@@ -204,12 +187,7 @@ export function Sidebar({
                   : 'bg-neutral-200 text-neutral-700 hover:bg-neutral-300'
               }`}
             >
-              <button
-                onClick={() => {
-                  onSelectView('mine')
-                  onSelectTag(selectedTagId === t.id ? null : t.id)
-                }}
-              >
+              <button onClick={() => onSelectTag(selectedTagId === t.id ? null : t.id)}>
                 #{t.name}
               </button>
               <button

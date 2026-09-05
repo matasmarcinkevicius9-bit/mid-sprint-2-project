@@ -68,6 +68,15 @@ These are hard requirements. Do not work around them.
   policies before being used.
 - `user_id` defaults to `auth.uid()` at the database level, so inserts do
   not need to pass it explicitly.
+- **Image files go in Supabase Storage, not in Postgres.** The
+  `note-images` bucket is **private**; a public bucket would serve every
+  image to anyone holding the URL regardless of who owns the note. Objects
+  are stored at `<user_id>/<note_id>/<uuid>.<ext>` and the storage policies
+  key off that first path segment, so keep that layout. Images are
+  displayed through short-lived signed URLs.
+- **Deleting a note must also delete its storage objects.** The database
+  cascade covers `note_images` rows but has no reach into storage, so files
+  would otherwise be orphaned in the bucket forever.
 
 ## Layout
 

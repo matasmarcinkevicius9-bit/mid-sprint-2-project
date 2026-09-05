@@ -1,8 +1,8 @@
 # Notes
 
 A notes workspace built with Next.js and Supabase. Sign in, then create,
-edit and delete notes, group them into collections, label them with tags,
-and search across all of them at once.
+edit and delete notes, attach images to them, group them into collections,
+label them with tags, and search across all of them at once.
 
 ## Stack
 
@@ -35,6 +35,16 @@ Run these in the Supabase **SQL Editor**, in order:
 
 1. `supabase/schema.sql` — tables for notes, collections, tags
 2. `supabase/002_add_auth.sql` — adds `user_id` and per-user RLS policies
+3. `supabase/004_note_images.sql` — the `note_images` table and its policies
+4. `supabase/005_note_images_storage.sql` — the private storage bucket and
+   its access policies
+
+Run them in that order. If step 4 is rejected on permissions, create the
+bucket through the dashboard instead — the file's header comment has the
+exact settings and policies.
+
+(`003_comments_and_sharing.sql` is intentionally not applied; the comments
+and sharing feature is not part of this app.)
 
 ### 4. Create a user
 

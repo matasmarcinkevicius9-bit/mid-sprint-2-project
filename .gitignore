@@ -39,3 +39,4 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+.claude/skills

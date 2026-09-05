@@ -4,6 +4,10 @@ A notes workspace built with Next.js and Supabase. Sign in, then create,
 edit and delete notes, attach images to them, group them into collections,
 label them with tags, and search across all of them at once.
 
+## Screenshot
+
+![The notes workspace running locally](docs/screenshot.png)
+
 ## Stack
 
 Next.js (App Router) · React · TypeScript · Tailwind CSS v4 · Supabase
@@ -87,6 +91,42 @@ To restrict access to accounts created by hand instead, turn off
 **Allow new users to sign up** in the Supabase dashboard under
 Authentication. Note that this also disables the self-service sign-up
 form.
+
+## Optional tasks delivered
+
+Three of the sprint's optional tasks are implemented.
+
+**Image uploads (hard).** A user can attach images to a note from the
+editor, using the file picker or by dragging files in. Images are held in
+a Supabase Storage bucket, never as base64 in the database, and they
+reappear on the note when the page is reopened. The bucket is private:
+objects live at `<user_id>/<note_id>/`, the storage policies key off that
+first path segment, and the app renders them through short-lived signed
+URLs, so one user's images are unreachable by another. Deleting a note
+removes its files from storage as well as its rows. Delivered on its own
+`note-images` feature branch.
+
+**Loading states (easy).** The workspace renders its header, sidebar and
+list chrome immediately and shows a skeleton in each region while data is
+in flight, so the note list never flashes empty. Load failures appear in
+place rather than blanking the screen.
+
+**Minimalist design (easy).** A restrained palette where black is reserved
+for actions and a single ink-indigo marks state, with the editor on white
+against a cooler shell so the writing surface reads as the page. Type
+carries the hierarchy: a serif for the user's own writing, a sans for the
+app's chrome, and a mono for machine facts such as counts, timestamps and
+section labels. Selection is marked by a thin rail rather than a filled
+row, and hover states are simple colour shifts.
+
+Two further optional tasks were also built as part of the main app rather
+than on their own branches: **tags** with a tag filter in the sidebar
+(implemented as a join table rather than a column on `notes`, so a note
+can carry several tags), and a **self-service sign-up page** that handles
+the confirmation-email step Supabase triggers on registration.
+
+The search box filters in the browser rather than querying Supabase, so
+it is not the *server-side search* optional task.
 
 ## Scripts
 

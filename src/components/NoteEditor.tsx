@@ -4,17 +4,25 @@ import { useEffect, useRef, useState } from 'react'
 import type { Collection, Note, Tag } from '../types'
 import { useDeleteNote, useUpdateNote } from '../hooks/useNotes'
 import { TagPicker } from './TagPicker'
+import { NoteImages } from './NoteImages'
 
 interface NoteEditorProps {
   note: Note
   collections: Collection[]
   allTags: Tag[]
+  userId: string
   onDeleted: () => void
 }
 
 const AUTOSAVE_DELAY_MS = 500
 
-export function NoteEditor({ note, collections, allTags, onDeleted }: NoteEditorProps) {
+export function NoteEditor({
+  note,
+  collections,
+  allTags,
+  userId,
+  onDeleted,
+}: NoteEditorProps) {
   const [title, setTitle] = useState(note.title)
   const [content, setContent] = useState(note.content)
   const [saved, setSaved] = useState(false)
@@ -139,8 +147,10 @@ export function NoteEditor({ note, collections, allTags, onDeleted }: NoteEditor
             onChange={(e) => setContent(e.target.value)}
             placeholder="Start writing…"
             aria-label="Note body"
-            className="min-h-[55vh] w-full resize-none border-none bg-transparent font-serif text-[16.5px] leading-[1.75] text-ink/90 outline-none placeholder:text-line"
+            className="min-h-[240px] w-full flex-none resize-none border-none bg-transparent font-serif text-[16.5px] leading-[1.75] text-ink/90 outline-none placeholder:text-line"
           />
+
+          <NoteImages noteId={note.id} userId={userId} />
         </div>
       </div>
     </div>

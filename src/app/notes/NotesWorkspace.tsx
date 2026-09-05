@@ -22,7 +22,7 @@ interface NotesWorkspaceProps {
  * The chrome renders immediately and each region shows its own skeleton,
  * so the workspace never flashes an empty list while data is in flight.
  */
-export function NotesWorkspace({ userEmail }: NotesWorkspaceProps) {
+export function NotesWorkspace({ userId, userEmail }: NotesWorkspaceProps) {
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -112,6 +112,7 @@ export function NotesWorkspace({ userEmail }: NotesWorkspaceProps) {
                 note={selectedNote}
                 collections={collections}
                 allTags={tags}
+                userId={userId}
                 onDeleted={() => setSelectedNoteId(null)}
               />
             ) : (

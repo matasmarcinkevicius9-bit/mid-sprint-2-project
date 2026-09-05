@@ -1,102 +1,61 @@
 # Reflection
 
-> Fill in each section in your own words. Delete these quoted prompts as you
-> go. There is a list of factual reminders at the bottom you can draw on —
-> those are just notes about what the project actually does, not sentences to
-> copy.
+## Choosing a persistent-storage approach
 
-## 1. What I asked
+I asked Claude Code to recommend a persistence layer for a React and
+TypeScript app already pointed at Supabase, with two constraints:
+`localStorage` and `sessionStorage` were ruled out, and each user had to
+see only their own notes.
 
-> The brief said to consult Claude Code on the best persistence option
-> *before* settling on one. What did you actually ask about, and what
-> constraints did you give it? (Existing stack, no localStorage or
-> sessionStorage, each user must only see their own notes.)
+It recommended Supabase Postgres, with row-level security doing the
+scoping rather than filtering by user in the client's queries.
 
-_Your answer here._
+That was the trade-off that mattered. Filtering in the query looks
+identical in the interface but protects nothing: anyone calling the REST
+API directly with the publishable key would still see every row. Row-level
+security makes ownership a property of the database rather than a habit of
+the front end.
 
-## 2. What it recommended
+I tested the claim rather than accepting it. Querying the REST endpoint
+with only the publishable key returns an empty array, because every policy
+reads `auth.uid() = user_id`. That convinced me the key being public is
+not a leak. I chose Postgres with RLS, and `user_id` defaulting to
+`auth.uid()` so insert code cannot forget or spoof it.
 
-> Summarise the recommendation and the reasoning behind it. Aim for two or
-> three sentences, not a transcript.
+## A route-protection issue I caught and fixed
 
-_Your answer here._
+My project rules require the session to be verified on the server before a
+protected page loads. Checking the auth code against that rule, I found
+`useAuth` calling `supabase.auth.getSession()`. I had assumed that
+confirmed whether someone was signed in. It does not: it reads the session
+out of browser storage and trusts it, which is exactly the
+browser-session-alone case the rule forbids.
 
-## 3. How I evaluated it
+I replaced it with `getUser()`, which revalidates the token against the
+Supabase Auth server. To prove the difference I planted a forged session
+cookie and reloaded: the server rejected it with a 403 and the app fell
+back to the sign-in page. That fix also introduced a hang, since
+`getUser()` throws on a malformed token and nothing caught it, so I
+wrapped it to resolve to signed-out instead.
 
-> This is the section markers care about most, because it shows judgement
-> rather than acceptance. Some prompts:
->
-> - Did you take the recommendation at face value, or test any part of it?
-> - What convinced you it was right?
-> - Was there anything you pushed back on, or that turned out to be more
->   involved than it first sounded?
+The deeper problem was structural. A browser-only app cannot satisfy this
+rule at all, because a server cannot read `localStorage`. Moving the
+session into cookies is what made a real server-side check possible, and
+what forced the move to Next.js partway through the sprint.
 
-_Your answer here._
+## A prompt the agent misinterpreted
 
-## 4. What I chose, and why
+I asked for "a way for people to leave comments on a document", meaning a
+comment box underneath a note.
 
-> State the decision plainly, then the reasons. Be concrete about how user
-> scoping is actually enforced, and where note data does and does not live.
+It built that, plus an entire sharing subsystem: invitations by email, a
+`security definer` Postgres function to resolve addresses to users, new
+policies granting shared access, and a "Shared with me" view. The
+reasoning was defensible, since notes are private and nobody else can
+comment on one without being granted access, but it was far more than I
+asked for and none of it was in the brief.
 
-_Your answer here._
-
-## 5. Alternatives I rejected
-
-> One line each on what you did not do and why. Suggested rows below — edit,
-> cut, or add your own.
-
-| Option | Why not |
-| --- | --- |
-| `localStorage` / `sessionStorage` | |
-| Filtering by user in client-side queries only | |
-| A custom backend in front of Supabase | |
-| | |
-
-## 6. What I would do differently
-
-> Be honest here — a specific mistake and what it cost you reads far better
-> than "I would manage my time better." Think about what you had to redo,
-> and what you would have needed to know earlier to avoid it.
-
-_Your answer here._
-
----
-
-## Factual reminders
-
-Notes about what this project actually does, to save you digging through the
-code. Put them in your own words rather than lifting them.
-
-**Stack.** Next.js (App Router), React, TypeScript, Tailwind CSS v4,
-Supabase for both database and auth, TanStack Query for client-side data
-fetching.
-
-**Where notes live.** Every note, collection and tag is a row in Supabase
-Postgres. Nothing is written to `localStorage` or `sessionStorage` — after
-signing in and creating notes, both browser stores are completely empty.
-
-**How per-user scoping works.** Each table has a `user_id` column that
-defaults to `auth.uid()`, plus a row-level security policy of
-`auth.uid() = user_id`. The client never filters by user; the database
-refuses to return other people's rows. Verified by signing in as a second
-account and seeing none of the first account's notes.
-
-**Where the session lives, and why it matters.** The session is stored in
-cookies via `@supabase/ssr`, not `localStorage`. This was the consequential
-decision: a server cannot read `localStorage`, so the original browser-only
-build could not satisfy "verify the session on the server before the page
-loads." Moving the session into cookies is what made a server-side check
-possible, and that is what forced the move from a Vite single-page app to
-Next.js partway through the sprint.
-
-**How the route protection is checked.** `middleware.ts` runs before a
-protected page renders, and `src/app/notes/page.tsx` checks again on the
-server. Both call `getUser()`, which revalidates the token against the
-Supabase Auth server, rather than `getSession()`, which would trust whatever
-the browser sent. Evidence: `curl` (which runs no JavaScript) gets a `307`
-redirect to `/signin`, and so does a request carrying a forged session
-cookie.
-
-**Known caveat.** Signups are currently open in the Supabase project, so
-Google sign-in and the sign-up page both create accounts automatically
-rather than requiring an account made by hand in the dashboard.
+I redirected by scoping it out, telling it to drop comments and sharing
+from this sprint and keep only what the brief grades. The feature had
+never worked anyway, because its migration was never applied. The lesson
+is to state the boundary in the prompt, not only the goal.

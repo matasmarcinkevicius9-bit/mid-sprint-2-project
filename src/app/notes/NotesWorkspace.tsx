@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { useCollections } from '@/hooks/useCollections'
 import { useTags } from '@/hooks/useTags'
 import { useCreateNote, useNotes } from '@/hooks/useNotes'
+import { AppHeader } from '@/components/AppHeader'
 import { Sidebar } from '@/components/Sidebar'
-import { SearchBar } from '@/components/SearchBar'
 import { NoteList } from '@/components/NoteList'
 import { NoteEditor } from '@/components/NoteEditor'
 
@@ -15,9 +15,12 @@ interface NotesWorkspaceProps {
 }
 
 /**
- * The signed-in workspace. Auth is already guaranteed by middleware and
- * the server component that renders this, so there is no client-side
- * auth gate here. Row-level security scopes every query to userId.
+ * Auth is already guaranteed by middleware and the server component that
+ * renders this, so there is no client-side auth gate here. Row-level
+ * security scopes every query to the signed-in user.
+ *
+ * The chrome renders immediately and each region shows its own skeleton,
+ * so the workspace never flashes an empty list while data is in flight.
  */
 export function NotesWorkspace({ userEmail }: NotesWorkspaceProps) {
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
@@ -57,54 +60,71 @@ export function NotesWorkspace({ userEmail }: NotesWorkspaceProps) {
     })
   }
 
-  if (collectionsLoading || tagsLoading || notesLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-neutral-400">Loading…</div>
-    )
-  }
-
-  if (isError) {
-    return (
-      <div className="flex h-screen items-center justify-center text-red-600">
-        Failed to load notes: {(error as Error).message}
-      </div>
-    )
-  }
-
   return (
-    <div className="flex h-screen bg-white text-neutral-900">
-      <Sidebar
-        collections={collections}
-        tags={tags}
-        selectedCollectionId={selectedCollectionId}
-        selectedTagId={selectedTagId}
-        onSelectCollection={setSelectedCollectionId}
-        onSelectTag={setSelectedTagId}
+    <div className="flex h-screen flex-col bg-shell">
+      <AppHeader
         userEmail={userEmail}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        noteCount={filteredNotes.length}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        <div className="flex min-h-0 flex-1">
-          <NoteList
-            notes={filteredNotes}
-            selectedNoteId={selectedNoteId}
-            onSelectNote={setSelectedNoteId}
-            onCreateNote={handleCreateNote}
-          />
-          {selectedNote ? (
-            <NoteEditor
-              key={selectedNote.id}
-              note={selectedNote}
-              collections={collections}
-              allTags={tags}
-              onDeleted={() => setSelectedNoteId(null)}
-            />
-          ) : (
-            <div className="flex flex-1 items-center justify-center text-sm text-neutral-400">
-              Select a note or create a new one.
+
+      <div className="flex min-h-0 flex-1">
+        <Sidebar
+          collections={collections}
+          tags={tags}
+          selectedCollectionId={selectedCollectionId}
+          selectedTagId={selectedTagId}
+          onSelectCollection={setSelectedCollectionId}
+          onSelectTag={setSelectedTagId}
+          loading={collectionsLoading || tagsLoading}
+        />
+
+        {isError ? (
+          <div className="flex flex-1 items-center justify-center bg-paper px-8">
+            <div className="max-w-sm text-center">
+              <p className="font-serif text-[17px] text-ink">Notes could not be loaded</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                {(error as Error).message}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-5 rounded-lg bg-ink px-3.5 py-2 text-[12.5px] font-medium text-paper transition-opacity hover:opacity-85"
+              >
+                Try again
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <NoteList
+              notes={filteredNotes}
+              selectedNoteId={selectedNoteId}
+              onSelectNote={setSelectedNoteId}
+              onCreateNote={handleCreateNote}
+              loading={notesLoading}
+              searchQuery={searchQuery}
+            />
+
+            {selectedNote ? (
+              <NoteEditor
+                key={selectedNote.id}
+                note={selectedNote}
+                collections={collections}
+                allTags={tags}
+                onDeleted={() => setSelectedNoteId(null)}
+              />
+            ) : (
+              <div className="flex flex-1 items-center justify-center bg-paper px-8">
+                <p className="max-w-xs text-center font-serif text-[15px] leading-relaxed text-faint">
+                  {notesLoading
+                    ? 'Opening your notes'
+                    : 'Choose a note from the list, or start a new one.'}
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

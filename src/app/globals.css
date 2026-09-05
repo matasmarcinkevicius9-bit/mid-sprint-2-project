@@ -1,1 +1,97 @@
 @import "tailwindcss";
+
+@theme {
+  /* Surfaces: the editor is pure white so the writing surface reads as the
+     lit page, with the surrounding chrome a shade cooler and quieter. */
+  --color-paper: #ffffff;
+  --color-shell: #f7f8fa;
+  --color-line: #e7e9ef;
+  --color-line-soft: #eff1f5;
+
+  /* Text */
+  --color-ink: #15171c;
+  --color-muted: #6f7684;
+  --color-faint: #9aa1ad;
+
+  /* Action is black. State is ink-indigo. Keeping those two jobs on
+     different colours is what keeps the palette restrained. */
+  --color-accent: #3b45d9;
+  --color-accent-wash: #eff0fd;
+  --color-danger: #c0392f;
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, Cambria, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-shell);
+  }
+
+  /* Visible keyboard focus everywhere, without ringing the mouse users. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--color-accent-wash);
+    color: var(--color-ink);
+  }
+}
+
+/* Small caps-ish utility for the machine-fact labels. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-line-soft);
+  border-radius: 4px;
+}
+
+@utility skeleton-sheen {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.85),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -74,33 +74,47 @@ export function NoteList({
                       selected ? 'bg-paper' : 'hover:bg-line-soft/60'
                     }`}
                   >
-                    <div className="flex items-baseline gap-3">
-                      <span
-                        className={`min-w-0 flex-1 truncate font-serif text-[15px] ${
-                          selected ? 'text-ink' : 'text-ink/90'
-                        }`}
-                      >
-                        {note.title || 'Untitled'}
-                      </span>
-                      <span className="shrink-0 font-mono text-[10px] text-faint">
-                        {relativeDate(note.updated_at)}
-                      </span>
-                    </div>
-                    <p className="mt-1 truncate text-[12.5px] leading-relaxed text-muted">
-                      {note.content || 'Empty note'}
-                    </p>
-                    {note.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {note.tags.map((t) => (
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-3">
                           <span
-                            key={t.id}
-                            className="rounded-full border border-line bg-paper px-1.5 py-[1px] text-[10.5px] text-muted"
+                            className={`min-w-0 flex-1 truncate font-serif text-[15px] ${
+                              selected ? 'text-ink' : 'text-ink/90'
+                            }`}
                           >
-                            {t.name}
+                            {note.title || 'Untitled'}
                           </span>
-                        ))}
+                          <span className="shrink-0 font-mono text-[10px] text-faint">
+                            {relativeDate(note.updated_at)}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-[12.5px] leading-relaxed text-muted">
+                          {note.content || 'Empty note'}
+                        </p>
+                        {note.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {note.tags.map((t) => (
+                              <span
+                                key={t.id}
+                                className="rounded-full border border-line bg-paper px-1.5 py-[1px] text-[10.5px] text-muted"
+                              >
+                                {t.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      {note.preview_image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={note.preview_image_url}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-12 w-12 shrink-0 rounded-md border border-line object-cover"
+                        />
+                      )}
+                    </div>
                   </button>
                 </li>
               )

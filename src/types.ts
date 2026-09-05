@@ -19,6 +19,8 @@ export interface Note {
   created_at: string
   updated_at: string
   tags: Tag[]
+  /** Signed URL of the note's first image, for the list thumbnail. */
+  preview_image_url: string | null
 }
 
 export interface Comment {

@@ -67,7 +67,7 @@ export function NoteImages({ noteId, userId }: NoteImagesProps) {
         if (dragDepth.current <= 0) setDragging(false)
       }}
       onDrop={onDrop}
-      className={`mt-10 rounded-xl border border-dashed p-4 transition-colors ${
+      className={`mt-8 mb-10 rounded-xl border border-dashed p-4 transition-colors ${
         dragging ? 'border-accent bg-accent-wash' : 'border-line bg-transparent'
       }`}
       aria-label="Images attached to this note"
@@ -117,18 +117,18 @@ export function NoteImages({ noteId, userId }: NoteImagesProps) {
               <button
                 type="button"
                 onClick={() => img.url && setLightbox({ url: img.url, name: img.file_name })}
-                className="block h-24 w-24 overflow-hidden rounded-lg border border-line bg-shell"
-                title={img.file_name}
+                className="block h-44 max-w-[320px] overflow-hidden rounded-lg border border-line bg-shell"
+                title={`${img.file_name} — click to view full size`}
               >
                 {img.url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={img.url}
                     alt={img.file_name}
-                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                    className="h-44 w-auto max-w-[320px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center text-[10px] text-faint">
+                  <span className="flex h-44 w-44 items-center justify-center text-[11px] text-faint">
                     Unavailable
                   </span>
                 )}

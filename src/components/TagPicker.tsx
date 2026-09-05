@@ -12,6 +12,8 @@ interface TagPickerProps {
 
 export function TagPicker({ note, allTags }: TagPickerProps) {
   const [input, setInput] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const addTagToNote = useAddTagToNote()
   const removeTagFromNote = useRemoveTagFromNote()
 
@@ -23,10 +25,25 @@ export function TagPicker({ note, allTags }: TagPickerProps) {
 
   async function commitTag(name: string) {
     const trimmed = name.trim()
-    if (!trimmed) return
-    const tag = await getOrCreateTag(trimmed)
-    if (!noteTagIds.has(tag.id)) addTagToNote.mutate({ noteId: note.id, tagId: tag.id })
+    if (!trimmed || busy) return
+    // Clear straight away so a second Enter during the round trip cannot
+    // submit the same tag twice.
     setInput('')
+    setError(null)
+    setBusy(true)
+    try {
+      const tag = await getOrCreateTag(trimmed)
+      if (!noteTagIds.has(tag.id)) {
+        addTagToNote.mutate({ noteId: note.id, tagId: tag.id })
+      }
+    } catch (err) {
+      // Without this the rejection is unhandled and Next.js shows a runtime
+      // error overlay reading "[object Object]".
+      setError(err instanceof Error ? err.message : 'Could not add that tag.')
+      setInput(trimmed)
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -59,7 +76,8 @@ export function TagPicker({ note, allTags }: TagPickerProps) {
               commitTag(input)
             }
           }}
-          placeholder={note.tags.length ? 'Add tag' : 'Add a tag'}
+          placeholder={busy ? 'Adding…' : note.tags.length ? 'Add tag' : 'Add a tag'}
+          disabled={busy}
           aria-label="Add a tag"
           className="w-[104px] rounded-full border border-dashed border-line bg-transparent px-2.5 py-[3px] text-[11.5px] text-ink transition-colors placeholder:text-faint hover:border-faint focus:border-solid focus:border-accent focus:outline-none"
         />
@@ -78,6 +96,12 @@ export function TagPicker({ note, allTags }: TagPickerProps) {
           </ul>
         )}
       </div>
+
+      {error && (
+        <p className="w-full pt-1 text-[11.5px] text-danger" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

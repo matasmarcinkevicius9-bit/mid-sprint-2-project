@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { toError } from '@/lib/supabase/error'
 import type { Note, Tag } from '../types'
 
 const supabase = createClient()
@@ -40,7 +41,7 @@ export function useNotes(options?: { enabled?: boolean }) {
         .from('notes')
         .select('*, note_tags(tags(*))')
         .order('updated_at', { ascending: false })
-      if (error) throw error
+      if (error) throw toError(error)
       return (data as unknown as NoteRow[]).map(toNote)
     },
     enabled: options?.enabled ?? true,
@@ -56,7 +57,7 @@ export function useCreateNote() {
         .insert({ collection_id: collectionId, title: '', content: '' })
         .select('*, note_tags(tags(*))')
         .single()
-      if (error) throw error
+      if (error) throw toError(error)
       return toNote(data as unknown as NoteRow)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_KEY }),
@@ -74,7 +75,7 @@ export function useUpdateNote() {
       patch: Partial<Pick<Note, 'title' | 'content' | 'collection_id'>>
     }) => {
       const { error } = await supabase.from('notes').update(patch).eq('id', id)
-      if (error) throw error
+      if (error) throw toError(error)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_KEY }),
   })
@@ -85,7 +86,7 @@ export function useDeleteNote() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('notes').delete().eq('id', id)
-      if (error) throw error
+      if (error) throw toError(error)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_KEY }),
   })
@@ -96,7 +97,7 @@ export function useAddTagToNote() {
   return useMutation({
     mutationFn: async ({ noteId, tagId }: { noteId: string; tagId: string }) => {
       const { error } = await supabase.from('note_tags').insert({ note_id: noteId, tag_id: tagId })
-      if (error) throw error
+      if (error) throw toError(error)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_KEY }),
   })
@@ -111,7 +112,7 @@ export function useRemoveTagFromNote() {
         .delete()
         .eq('note_id', noteId)
         .eq('tag_id', tagId)
-      if (error) throw error
+      if (error) throw toError(error)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: NOTES_KEY }),
   })

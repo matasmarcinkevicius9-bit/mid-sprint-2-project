@@ -1,94 +1,102 @@
 # Reflection
 
-## Choosing a persistence approach
+> Fill in each section in your own words. Delete these quoted prompts as you
+> go. There is a list of factual reminders at the bottom you can draw on —
+> those are just notes about what the project actually does, not sentences to
+> copy.
 
-### What I asked
+## 1. What I asked
 
-Before settling on how notes should be stored, I consulted Claude Code on
-the best option given the stack already in place: a React + TypeScript
-front end talking to a Supabase project, with the hard constraint that no
-note data may live in `localStorage` or `sessionStorage`, and that each
-user must see only their own notes.
+> The brief said to consult Claude Code on the best persistence option
+> *before* settling on one. What did you actually ask about, and what
+> constraints did you give it? (Existing stack, no localStorage or
+> sessionStorage, each user must only see their own notes.)
 
-### What it recommended
+_Your answer here._
 
-Store notes in **Supabase Postgres, with row-level security (RLS) doing the
-per-user scoping**, rather than filtering by user in client code.
+## 2. What it recommended
 
-The reasoning it gave:
+> Summarise the recommendation and the reasoning behind it. Aim for two or
+> three sentences, not a transcript.
 
-- Supabase was already the backing store for the project, so adding a
-  second persistence mechanism would mean two sources of truth to keep in
-  sync.
-- RLS enforces ownership in the database itself. Even if a bug in the front
-  end forgot to filter by user, or someone called the REST API directly
-  with the publishable key, Postgres would still refuse to return another
-  user's rows. Client-side filtering gives the appearance of scoping
-  without the guarantee.
-- Putting `user_id` on each table with a default of `auth.uid()` means
-  insert code never has to pass the user id, so it cannot be spoofed or
-  forgotten.
-- `localStorage`/`sessionStorage` were ruled out regardless: data there is
-  per-browser, survives sign-out, is readable by any script on the origin,
-  and would not survive the "sign in on another machine" case at all.
+_Your answer here._
 
-### How I evaluated it
+## 3. How I evaluated it
 
-I pushed on three points before accepting it.
+> This is the section markers care about most, because it shows judgement
+> rather than acceptance. Some prompts:
+>
+> - Did you take the recommendation at face value, or test any part of it?
+> - What convinced you it was right?
+> - Was there anything you pushed back on, or that turned out to be more
+>   involved than it first sounded?
 
-**Is RLS actually doing the work, or is it decoration?** I tested this
-rather than assuming. Querying the REST API directly with only the
-publishable key returns an empty array — the key alone grants nothing,
-because every policy is written as `auth.uid() = user_id`. That is the
-behaviour I wanted: the key being public is not a leak, since the JWT is
-what determines visibility.
+_Your answer here._
 
-**Where does the session live?** This turned out to be the consequential
-part. The first version of the app kept the Supabase session in
-`localStorage`, which is the default for a browser-only app. That is not
-note data, so it did not break the storage rule, but it did make a genuine
-server-side auth check impossible: a server cannot read `localStorage`. To
-satisfy the requirement that the signed-in check happens on the server
-before a protected page loads, the session had to move to **cookies** via
-`@supabase/ssr`. That forced the move from a Vite SPA to Next.js, where
-middleware and Server Components can read those cookies on the request.
+## 4. What I chose, and why
 
-**Is checking the session enough?** No. An earlier version used
-`getSession()`, which just reads and trusts whatever the browser sent. I
-replaced it with `getUser()`, which revalidates the token against the
-Supabase Auth server. I verified the difference by planting a forged
-session cookie: with `getUser()`, the server rejects it and redirects to
-sign-in.
+> State the decision plainly, then the reasons. Be concrete about how user
+> scoping is actually enforced, and where note data does and does not live.
 
-### What I chose, and why
+_Your answer here._
 
-**Supabase Postgres as the only persistence layer, with RLS scoping every
-table by `user_id`, and the auth session held in cookies so the server can
-verify it before rendering a protected page.**
+## 5. Alternatives I rejected
 
-Concretely:
-
-- `notes`, `collections` and `tags` each carry a `user_id` that defaults to
-  `auth.uid()`, and each has an owner-only RLS policy.
-- No note data touches `localStorage` or `sessionStorage` anywhere.
-- `middleware.ts` checks the user on every request to a protected route;
-  `src/app/notes/page.tsx` checks again on the server before rendering.
-- Both checks use `getUser()`, not `getSession()`.
-
-### Alternatives I rejected
+> One line each on what you did not do and why. Suggested rows below — edit,
+> cut, or add your own.
 
 | Option | Why not |
 | --- | --- |
-| `localStorage` / `sessionStorage` | Explicitly forbidden by the brief, and rightly so: per-browser, survives sign-out, no cross-device access, readable by any script on the origin. |
-| Filtering by `user_id` in client queries only | Looks identical in the UI but offers no real protection. Anyone calling the API directly would see every row. RLS makes the guarantee structural. |
-| A separate custom backend in front of Supabase | Another service to write, run and secure, duplicating what RLS already does correctly. Not justified at this size. |
-| IndexedDB for offline caching | Solves a problem this project does not have yet, and would reintroduce a second source of truth. Worth revisiting only if offline support is ever required. |
+| `localStorage` / `sessionStorage` | |
+| Filtering by user in client-side queries only | |
+| A custom backend in front of Supabase | |
+| | |
 
-## What I would do differently
+## 6. What I would do differently
 
-The costly mistake was building on a client-only SPA before reading the
-auth requirement closely. "Verify the session on the server" is not a
-detail that can be bolted on at the end — it determines where the session
-is stored, which determines the framework. Had I started from that
-constraint, the project would have been Next.js from the first commit
-instead of migrating to it mid-sprint.
+> Be honest here — a specific mistake and what it cost you reads far better
+> than "I would manage my time better." Think about what you had to redo,
+> and what you would have needed to know earlier to avoid it.
+
+_Your answer here._
+
+---
+
+## Factual reminders
+
+Notes about what this project actually does, to save you digging through the
+code. Put them in your own words rather than lifting them.
+
+**Stack.** Next.js (App Router), React, TypeScript, Tailwind CSS v4,
+Supabase for both database and auth, TanStack Query for client-side data
+fetching.
+
+**Where notes live.** Every note, collection and tag is a row in Supabase
+Postgres. Nothing is written to `localStorage` or `sessionStorage` — after
+signing in and creating notes, both browser stores are completely empty.
+
+**How per-user scoping works.** Each table has a `user_id` column that
+defaults to `auth.uid()`, plus a row-level security policy of
+`auth.uid() = user_id`. The client never filters by user; the database
+refuses to return other people's rows. Verified by signing in as a second
+account and seeing none of the first account's notes.
+
+**Where the session lives, and why it matters.** The session is stored in
+cookies via `@supabase/ssr`, not `localStorage`. This was the consequential
+decision: a server cannot read `localStorage`, so the original browser-only
+build could not satisfy "verify the session on the server before the page
+loads." Moving the session into cookies is what made a server-side check
+possible, and that is what forced the move from a Vite single-page app to
+Next.js partway through the sprint.
+
+**How the route protection is checked.** `middleware.ts` runs before a
+protected page renders, and `src/app/notes/page.tsx` checks again on the
+server. Both call `getUser()`, which revalidates the token against the
+Supabase Auth server, rather than `getSession()`, which would trust whatever
+the browser sent. Evidence: `curl` (which runs no JavaScript) gets a `307`
+redirect to `/signin`, and so does a request carrying a forged session
+cookie.
+
+**Known caveat.** Signups are currently open in the Supabase project, so
+Google sign-in and the sign-up page both create accounts automatically
+rather than requiring an account made by hand in the dashboard.

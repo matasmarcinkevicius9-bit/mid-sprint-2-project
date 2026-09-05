@@ -37,3 +37,17 @@ export interface NoteShare {
   shared_with_email: string
   created_at: string
 }
+
+export interface NoteImage {
+  id: string
+  note_id: string
+  user_id: string
+  storage_path: string
+  file_name: string
+  created_at: string
+}
+
+/** A NoteImage plus a short-lived signed URL for displaying it. */
+export interface NoteImageWithUrl extends NoteImage {
+  url: string | null
+}

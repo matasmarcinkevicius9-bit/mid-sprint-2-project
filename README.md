@@ -64,6 +64,20 @@ Open http://localhost:3000.
 Notes are scoped per user by row-level security in Postgres, not by
 client-side filtering.
 
+### Registration
+
+Sign-up is open in this project: the sign-up form and "Continue with
+Google" both create an account on first use, rather than requiring one to
+be made by hand in the Supabase dashboard. This is deliberate for a
+personal project, and it is safe because row-level security scopes every
+row to its owner, so a new account starts empty and can never read anyone
+else's notes.
+
+To restrict access to accounts created by hand instead, turn off
+**Allow new users to sign up** in the Supabase dashboard under
+Authentication. Note that this also disables the self-service sign-up
+form.
+
 ## Scripts
 
 | Command | Does |

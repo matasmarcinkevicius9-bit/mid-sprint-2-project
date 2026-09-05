@@ -1,4 +1,4 @@
-# Notes
+# BAI.2.08 — Notes
 
 A notes workspace built with Next.js and Supabase. Sign in, then create,
 edit and delete notes, attach images to them, group them into collections,

@@ -121,13 +121,17 @@ export function useDeleteNoteImage() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ image }: { image: NoteImage; noteId: string }) => {
-      const { error } = await supabase.from('note_images').delete().eq('id', image.id)
-      if (error) throw toError(error)
-
+      // Remove the stored object before its row. The other way round, a
+      // failure here would strand the file in the bucket with nothing left
+      // pointing at it; this order leaves the row intact on failure, so the
+      // delete can simply be retried.
       const { error: removeError } = await supabase.storage
         .from(BUCKET)
         .remove([image.storage_path])
       if (removeError) throw toError(removeError)
+
+      const { error } = await supabase.from('note_images').delete().eq('id', image.id)
+      if (error) throw toError(error)
     },
     onSuccess: (_data, variables) =>
       queryClient.invalidateQueries({ queryKey: imagesKey(variables.noteId) }),

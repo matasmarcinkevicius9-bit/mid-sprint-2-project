@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   useDeleteNoteImage,
   useNoteImages,
@@ -50,6 +50,17 @@ export function NoteImages({ noteId, userId }: NoteImagesProps) {
     setDragging(false)
     if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files)
   }
+
+  // The overlay never receives focus, so a keydown handler on it would not
+  // fire. Listen on the document instead so Escape actually closes it.
+  useEffect(() => {
+    if (!lightbox) return
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLightbox(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [lightbox])
 
   const busy = upload.isPending
 
@@ -135,7 +146,20 @@ export function NoteImages({ noteId, userId }: NoteImagesProps) {
               </button>
               <button
                 type="button"
-                onClick={() => remove.mutate({ image: img, noteId })}
+                onClick={() =>
+                  remove.mutate(
+                    { image: img, noteId },
+                    {
+                      onError: (err) =>
+                        setErrors((prev) => [
+                          ...prev,
+                          err instanceof Error
+                            ? err.message
+                            : `Could not remove ${img.file_name}.`,
+                        ]),
+                    },
+                  )
+                }
                 aria-label={`Remove ${img.file_name}`}
                 className="absolute -right-1.5 -top-1.5 hidden rounded-full border border-line bg-paper p-1 text-muted shadow-sm transition-colors hover:text-danger group-hover:block"
               >
@@ -164,7 +188,6 @@ export function NoteImages({ noteId, userId }: NoteImagesProps) {
           aria-modal="true"
           aria-label={lightbox.name}
           onClick={() => setLightbox(null)}
-          onKeyDown={(e) => e.key === 'Escape' && setLightbox(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-8"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}

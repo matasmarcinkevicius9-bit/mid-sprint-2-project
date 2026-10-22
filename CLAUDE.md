@@ -96,6 +96,12 @@ supabase/                  SQL migrations, run by hand in the SQL Editor
   considering a change done.
 - SQL changes go in a new numbered file under `supabase/` and are applied
   through the Supabase SQL Editor.
+- **Commit and push every big change automatically**, without waiting to be
+  asked. Once a meaningful milestone passes the checks above, commit it and
+  push it to GitHub rather than batching work into one commit at the end.
+  Commit only the files that change touched. Do risky or large reworks on a
+  feature branch and merge to `main` once verified. Before pushing, check
+  the staged diff for secrets and confirm `.env*` files are not staged.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

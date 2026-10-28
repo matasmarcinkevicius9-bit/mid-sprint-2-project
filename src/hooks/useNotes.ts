@@ -131,15 +131,19 @@ export function useDeleteNote() {
     mutationFn: async (id: string) => {
       // Deleting the note cascades its note_images rows, but storage
       // objects are not covered by that cascade, so remove the files
-      // first or they are orphaned in the bucket forever.
-      const { data: images } = await supabase
+      // first or they are orphaned in the bucket forever. Either step
+      // failing aborts before the note row goes, so the delete can be
+      // retried with its image rows still pointing at the files.
+      const { data: images, error: imagesError } = await supabase
         .from('note_images')
         .select('storage_path')
         .eq('note_id', id)
+      if (imagesError) throw toError(imagesError)
 
       const paths = (images ?? []).map((i: { storage_path: string }) => i.storage_path)
       if (paths.length > 0) {
-        await supabase.storage.from(IMAGE_BUCKET).remove(paths)
+        const { error: removeError } = await supabase.storage.from(IMAGE_BUCKET).remove(paths)
+        if (removeError) throw toError(removeError)
       }
 
       const { error } = await supabase.from('notes').delete().eq('id', id)

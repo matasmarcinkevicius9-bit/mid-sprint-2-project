@@ -8,12 +8,15 @@ import { createClient } from '@/lib/supabase/server'
  * Without this, `?next=@evil.com` would make `${origin}${next}` parse as
  * `https://app@evil.com` — userinfo `app`, host `evil.com` — sending a
  * freshly authenticated user off-site.
+ *
+ * Backslashes are rejected too: URL parsing treats `\` like `/`, so
+ * `/\evil.com` would otherwise resolve to `https://evil.com/`.
  */
 function safeNext(raw: string | null): string {
   if (!raw) return '/notes'
   // Must start with exactly one slash: rejects "@evil.com", "//evil.com"
   // and absolute URLs.
-  return /^\/(?!\/)/.test(raw) ? raw : '/notes'
+  return /^\/(?!\/)/.test(raw) && !raw.includes('\\') ? raw : '/notes'
 }
 
 /**

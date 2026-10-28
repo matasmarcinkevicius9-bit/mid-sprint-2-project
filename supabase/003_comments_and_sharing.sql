@@ -71,12 +71,13 @@ declare
   v_target_user_id uuid;
   v_target_email text;
 begin
+  -- Checked before anything else: for a signed-out caller auth.uid() is
+  -- null, and a plain "v_owner <> auth.uid()" would then be null, i.e.
+  -- not true, letting the owner check fall through. One message for
+  -- "missing" and "not yours" so note ids cannot be probed.
   select user_id into v_owner from notes where id = p_note_id;
-  if v_owner is null then
+  if auth.uid() is null or v_owner is distinct from auth.uid() then
     raise exception 'Note not found';
-  end if;
-  if v_owner <> auth.uid() then
-    raise exception 'Only the owner can share this note';
   end if;
 
   select id, email into v_target_user_id, v_target_email
@@ -95,4 +96,25 @@ begin
 end;
 $$;
 
+-- Functions are executable by PUBLIC (which includes anon) by default, so
+-- granting to authenticated alone does not keep signed-out callers out.
+revoke execute on function share_note_by_email(uuid, text) from public, anon;
 grant execute on function share_note_by_email(uuid, text) to authenticated;
+
+-- author_email is display data other viewers see, so it must come from the
+-- verified token, not from whatever the client sends.
+create or replace function set_comment_author_email()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.author_email := coalesce(auth.jwt() ->> 'email', '');
+  return new;
+end;
+$$;
+
+drop trigger if exists comments_set_author_email on comments;
+create trigger comments_set_author_email
+  before insert or update on comments
+  for each row execute function set_comment_author_email();

@@ -42,13 +42,19 @@ Run these in the Supabase **SQL Editor**, in order:
 3. `supabase/004_note_images.sql` — the `note_images` table and its policies
 4. `supabase/005_note_images_storage.sql` — the private storage bucket and
    its access policies
+5. `supabase/006_tighten_policies.sql` — tag ownership on `note_tags`,
+   folder-bound `storage_path` on `note_images`, pinned `search_path`
+6. `supabase/007_harden_policies.sql` — collection ownership on `notes`,
+   uploads only into your own notes' folders, all policies limited to
+   signed-in users
 
 Run them in that order. If step 4 is rejected on permissions, create the
 bucket through the dashboard instead — the file's header comment has the
 exact settings and policies.
 
 (`003_comments_and_sharing.sql` is intentionally not applied; the comments
-and sharing feature is not part of this app.)
+and sharing feature is not part of this app, and its header lists security
+problems that must be fixed before it ever is.)
 
 ### 4. Create a user
 

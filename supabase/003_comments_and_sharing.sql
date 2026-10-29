@@ -1,5 +1,18 @@
 -- Adds note sharing (by email, view+comment only) and comments on top of
 -- 001_schema.sql / 002_add_auth.sql. Run once in the Supabase SQL Editor.
+--
+-- DO NOT APPLY AS-IS. This file is intentionally not applied, and the
+-- security audit found problems that must be fixed first:
+--   - "shared users can view" on notes queries note_shares, whose owner
+--     policy queries notes: Postgres raises "infinite recursion detected in
+--     policy" and every read of notes fails. Move the ownership lookup into
+--     a security definer helper in a non-exposed schema.
+--   - share_note_by_email is a security definer function in the exposed
+--     public schema, uses search_path = public instead of '', and its
+--     "No account found" error reveals which emails have accounts.
+--   - "owner manages shares" is FOR ALL, so owners can insert share rows
+--     directly with any email text and skip the RPC. Limit it to
+--     select and delete.
 
 create table if not exists note_shares (
   id uuid primary key default gen_random_uuid(),

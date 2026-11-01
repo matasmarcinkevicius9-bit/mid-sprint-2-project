@@ -24,6 +24,9 @@ async function signIn(page: Page) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   // The dev server may need to compile /notes on first visit.
   await expect(page).toHaveURL(/\/notes$/, { timeout: 20_000 });
+  // The count replaces "Loading" only once React is running in the browser.
+  // A click before then is lost, because the buttons have no handlers yet.
+  await expect(page.getByText(/^\d+ notes?$/)).toBeVisible({ timeout: 20_000 });
 }
 
 // Edits autosave after a delay, so wait for the write before moving on.

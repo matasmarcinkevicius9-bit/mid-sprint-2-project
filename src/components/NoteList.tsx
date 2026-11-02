@@ -8,6 +8,8 @@ interface NoteListProps {
   selectedNoteId: string | null
   onSelectNote: (id: string) => void
   onCreateNote?: () => void
+  onlyMine?: boolean
+  onToggleOnlyMine?: () => void
   loading?: boolean
   searchQuery?: string
 }
@@ -26,6 +28,8 @@ export function NoteList({
   selectedNoteId,
   onSelectNote,
   onCreateNote,
+  onlyMine = false,
+  onToggleOnlyMine,
   loading = false,
   searchQuery = '',
 }: NoteListProps) {
@@ -47,6 +51,22 @@ export function NoteList({
           </button>
         )}
       </div>
+
+      {onToggleOnlyMine && (
+        <div className="flex h-10 shrink-0 items-center border-b border-line px-5">
+          <button
+            onClick={onToggleOnlyMine}
+            aria-pressed={onlyMine}
+            className={`rounded-full border px-2.5 py-1 text-[11.5px] transition-colors ${
+              onlyMine
+                ? 'border-accent bg-paper text-ink'
+                : 'border-line text-muted hover:border-faint hover:text-ink'
+            }`}
+          >
+            Show only my notes
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         {loading ? (

@@ -27,6 +27,7 @@ export function NotesWorkspace({ userId, userEmail }: NotesWorkspaceProps) {
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
+  const [onlyMine, setOnlyMine] = useState(false)
 
   const { data: collections = [], isLoading: collectionsLoading } = useCollections()
   const { data: tags = [], isLoading: tagsLoading } = useTags()
@@ -34,21 +35,24 @@ export function NotesWorkspace({ userId, userEmail }: NotesWorkspaceProps) {
   const createNote = useCreateNote()
 
   const filteredNotes = useMemo(() => {
+    // Row-level security already limits reads to the user's own notes; this
+    // only matters once notes from other users can reach the list.
+    const visible = onlyMine ? notes.filter((n) => n.user_id === userId) : notes
     const query = searchQuery.trim().toLowerCase()
     if (query) {
-      return notes.filter(
+      return visible.filter(
         (n) =>
           n.title.toLowerCase().includes(query) ||
           n.content.toLowerCase().includes(query) ||
           n.tags.some((t) => t.name.toLowerCase().includes(query)),
       )
     }
-    return notes.filter((n) => {
+    return visible.filter((n) => {
       if (selectedCollectionId && n.collection_id !== selectedCollectionId) return false
       if (selectedTagId && !n.tags.some((t) => t.id === selectedTagId)) return false
       return true
     })
-  }, [notes, searchQuery, selectedCollectionId, selectedTagId])
+  }, [notes, onlyMine, userId, searchQuery, selectedCollectionId, selectedTagId])
 
   const selectedNote =
     filteredNotes.find((n) => n.id === selectedNoteId) ??
@@ -102,6 +106,8 @@ export function NotesWorkspace({ userId, userEmail }: NotesWorkspaceProps) {
               selectedNoteId={selectedNoteId}
               onSelectNote={setSelectedNoteId}
               onCreateNote={handleCreateNote}
+              onlyMine={onlyMine}
+              onToggleOnlyMine={() => setOnlyMine((v) => !v)}
               loading={notesLoading}
               searchQuery={searchQuery}
             />
